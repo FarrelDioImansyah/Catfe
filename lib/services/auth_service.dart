@@ -1,81 +1,108 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 
 class AuthService {
-  final Box _userBox = Hive.box('users');
-  final Box _settingsBox = Hive.box('settings');
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final CollectionReference _userCollection =
+      FirebaseFirestore.instance.collection('users');
 
-  AuthService() {
-    _seedAdmin();
+  // Mengambil profile data (termasuk role) dari Firestore
+  Future<UserModel?> getUserProfile(String uid) async {
+    try {
+      final doc = await _userCollection.doc(uid).get();
+      if (doc.exists) {
+        return UserModel.fromMap(doc.data() as Map<String, dynamic>);
+      }
+    } catch (e) {
+      print('Error fetching user profile: $e');
+    }
+    return null;
   }
 
-  // Create a default admin account for local testing
-  void _seedAdmin() {
-    const adminEmail = 'admin@catfe.com';
-    if (!_userBox.containsKey(adminEmail)) {
-      final adminUser = UserModel(
-        uid: adminEmail,
-        email: adminEmail,
-        name: 'Cat Cafe Admin',
-        role: UserRole.admin,
+  // Register dengan Email & Password ke Firebase Auth & Firestore
+  Future<UserModel?> register(String email, String password, String name) async {
+    try {
+      // 1. Buat user di Firebase Auth
+      UserCredential credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
       );
 
-      _userBox.put(adminEmail, {
-        'userData': adminUser.toMap(),
-        'password': 'admin123',
-      });
+      final User? firebaseUser = credential.user;
+      if (firebaseUser == null) return null;
+
+      // Update nama di profile Firebase Auth
+      await firebaseUser.updateDisplayName(name);
+
+      // 2. Tentukan role (email admin@catfe.com atau berakhiran admin@catfe.com jadi admin)
+      UserRole role = email.endsWith('admin@catfe.com') ? UserRole.admin : UserRole.customer;
+
+      final newUser = UserModel(
+        uid: firebaseUser.uid,
+        email: email,
+        name: name,
+        role: role,
+      );
+
+      // 3. Simpan metadata user (seperti role) ke Firestore database
+      await _userCollection.doc(firebaseUser.uid).set(newUser.toMap());
+
+      return newUser;
+    } on FirebaseAuthException catch (e) {
+      throw e.message ?? 'Registration failed';
     }
   }
 
-  // Register locally
-  Future<UserModel?> register(String email, String password, String name) async {
-    if (_userBox.containsKey(email)) {
-      throw 'User already exists with this email';
-    }
-
-    final newUser = UserModel(
-      uid: email,
-      email: email,
-      name: name,
-      role: UserRole.customer,
-    );
-
-    await _userBox.put(email, {
-      'userData': newUser.toMap(),
-      'password': password,
-    });
-
-    return newUser;
-  }
-
-  // Login locally
+  // Login ke Firebase Auth
   Future<UserModel?> login(String email, String password) async {
-    final data = _userBox.get(email);
-    
-    if (data == null || data['password'] != password) {
-      throw 'Invalid email or password';
+    try {
+      UserCredential credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final User? firebaseUser = credential.user;
+      if (firebaseUser == null) return null;
+
+      // Ambil profile lengkap (role admin/customer) dari Firestore
+      UserModel? profile = await getUserProfile(firebaseUser.uid);
+      
+      // Jika profile tidak ada di database, buat profil default
+      if (profile == null) {
+        profile = UserModel(
+          uid: firebaseUser.uid,
+          email: email,
+          name: firebaseUser.displayName ?? 'Customer',
+          role: email.endsWith('admin@catfe.com') ? UserRole.admin : UserRole.customer,
+        );
+        await _userCollection.doc(firebaseUser.uid).set(profile.toMap());
+      }
+
+      return profile;
+    } on FirebaseAuthException catch (e) {
+      throw e.message ?? 'Login failed';
     }
-
-    final user = UserModel.fromMap(Map<String, dynamic>.from(data['userData']));
-    
-    await _settingsBox.put('currentUserEmail', email);
-    
-    return user;
   }
 
-  // Logout
+  // Logout dari Firebase Auth
   Future<void> logout() async {
-    await _settingsBox.delete('currentUserEmail');
+    await _auth.signOut();
   }
 
-  // Get current session
+  // Get current session secara sinkronous (untuk auto-login saat startup)
   UserModel? getCurrentUser() {
-    final email = _settingsBox.get('currentUserEmail');
-    if (email == null) return null;
-    
-    final data = _userBox.get(email);
-    if (data == null) return null;
-    
-    return UserModel.fromMap(Map<String, dynamic>.from(data['userData']));
+    final User? firebaseUser = _auth.currentUser;
+    if (firebaseUser == null) return null;
+
+    final bool isAdminEmail = firebaseUser.email != null && firebaseUser.email!.endsWith('admin@catfe.com');
+
+    return UserModel(
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      name: firebaseUser.displayName ?? 'Customer',
+      role: isAdminEmail ? UserRole.admin : UserRole.customer,
+    );
   }
 }
+

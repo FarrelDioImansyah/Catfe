@@ -1,4 +1,4 @@
-package com.example.catfe
+package com.catfe.app
 
 import io.flutter.embedding.android.FlutterActivity
 

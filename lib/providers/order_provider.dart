@@ -54,7 +54,7 @@ class OrderProvider with ChangeNotifier {
     );
 
     await _orderService.placeOrder(order);
-    
+
     _isLoading = false;
     notifyListeners();
   }

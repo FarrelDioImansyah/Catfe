@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/routes/app_routes.dart';
 import '../../../providers/product_provider.dart';
 import '../../../widgets/product_card.dart';
 import '../../../widgets/cart_badge.dart';

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "432325702637",
+    "project_id": "catfe-app",
+    "storage_bucket": "catfe-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:432325702637:android:d06f05d4925aae9f6bede4",
+        "android_client_info": {
+          "package_name": "com.catfe.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvaNYvaLS_vAuB7FGScL8WMuO_epq9wQY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

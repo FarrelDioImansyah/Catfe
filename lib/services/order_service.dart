@@ -1,41 +1,67 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/order_model.dart';
 
 class OrderService {
-  final Box _orderBox = Hive.box('orders');
+  final CollectionReference _orderCollection =
+      FirebaseFirestore.instance.collection('orders');
 
-  // Place a new order
+  List<OrderModel> _cachedOrders = [];
+
+  OrderService() {
+    // Dengarkan stream global pesanan secara realtime untuk sinkronisasi admin & customer
+    _orderCollection.snapshots().listen((snapshot) {
+      _cachedOrders = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return OrderModel.fromMap(data).copyWith(id: doc.id);
+      }).toList();
+    });
+  }
+
+  // Buat/kirim pesanan baru ke Cloud Firestore
   Future<void> placeOrder(OrderModel order) async {
+    // Kita buat ID pesanan yang unik dengan format ORD-timestamp
     final id = 'ORD-${DateTime.now().millisecondsSinceEpoch}';
-    await _orderBox.put(id, order.copyWith(id: id).toMap());
+    final orderWithId = order.copyWith(id: id);
+    // Simpan ke Firestore dengan ID dokumen ORD-timestamp agar mudah dicari
+    await _orderCollection.doc(id).set(orderWithId.toMap());
   }
 
-  // Get orders for a specific user
+  // Dapatkan riwayat pesanan user tertentu (dari cache lokal untuk performa cepat)
   List<OrderModel> getUserOrders(String userId) {
-    return _orderBox.values
-        .map((e) => OrderModel.fromMap(Map<String, dynamic>.from(e)))
-        .where((o) => o.userId == userId)
-        .toList();
+    return _cachedOrders.where((o) => o.userId == userId).toList();
   }
 
-  // Stream user orders
+  // Stream pesanan user secara realtime dari Firestore (untuk live order status tracking)
   Stream<List<OrderModel>> streamUserOrders(String userId) {
-    return _orderBox.watch().map((event) => getUserOrders(userId));
+    return _orderCollection
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return OrderModel.fromMap(data).copyWith(id: doc.id);
+      }).toList();
+    });
   }
 
-  // Admin: Get all orders
+  // Admin: Stream semua pesanan secara realtime dari Firestore
+  Stream<List<OrderModel>> streamAllOrders() {
+    return _orderCollection.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return OrderModel.fromMap(data).copyWith(id: doc.id);
+      }).toList();
+    });
+  }
+
+  // Admin: Mengambil semua daftar pesanan
   List<OrderModel> getAllOrders() {
-    return _orderBox.values
-        .map((e) => OrderModel.fromMap(Map<String, dynamic>.from(e)))
-        .toList();
+    return _cachedOrders;
   }
 
-  // Admin: Update order status
+  // Admin: Update status pesanan secara realtime
   Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
-    final data = _orderBox.get(orderId);
-    if (data != null) {
-      final order = OrderModel.fromMap(Map<String, dynamic>.from(data));
-      await _orderBox.put(orderId, order.copyWith(status: status).toMap());
-    }
+    await _orderCollection.doc(orderId).update({'status': status.name});
   }
 }
+

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_core/firebase_core.dart'; // Tambahkan ini
 
 // Providers
 import 'providers/auth_provider.dart';
@@ -17,16 +18,15 @@ import 'core/routes/app_routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Inisialisasi Firebase secara global
+  await Firebase.initializeApp();
+
   // Initialize Hive for local storage
   await Hive.initFlutter();
-  
-  // Open necessary Hive boxes
+
+  // Open settings Hive box untuk data keranjang belanja lokal
   await Hive.openBox('settings');
-  await Hive.openBox('products');
-  await Hive.openBox('cats');
-  await Hive.openBox('orders');
-  await Hive.openBox('users');
 
   runApp(
     MultiProvider(

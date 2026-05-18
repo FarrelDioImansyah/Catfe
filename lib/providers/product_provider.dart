@@ -10,8 +10,10 @@ class ProductProvider with ChangeNotifier {
   List<ProductModel> get products => _products;
   bool get isLoading => _isLoading;
 
-  List<ProductModel> get bestSellers => _products.where((p) => p.isBestSeller).toList();
-  List<ProductModel> get promoProducts => _products.where((p) => p.isPromo).toList();
+  List<ProductModel> get bestSellers =>
+      _products.where((p) => p.isBestSeller).toList();
+  List<ProductModel> get promoProducts =>
+      _products.where((p) => p.isPromo).toList();
 
   ProductProvider() {
     _init();

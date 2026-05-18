@@ -6,11 +6,13 @@ import '../models/cat_model.dart';
 import '../services/product_service.dart';
 import '../services/cat_service.dart';
 import '../services/order_service.dart';
+import '../services/storage_service.dart';
 
 class AdminProvider with ChangeNotifier {
   final ProductService _productService = ProductService();
   final CatService _catService = CatService();
   final OrderService _orderService = OrderService();
+  final StorageService _storageService = StorageService();
 
   List<OrderModel> _allOrders = [];
   List<ProductModel> _allProducts = [];
@@ -26,7 +28,8 @@ class AdminProvider with ChangeNotifier {
       .where((o) => o.status == OrderStatus.completed)
       .fold(0, (sum, item) => sum + item.totalAmount);
 
-  int get pendingOrdersCount => _allOrders.where((o) => o.status == OrderStatus.pending).length;
+  int get pendingOrdersCount =>
+      _allOrders.where((o) => o.status == OrderStatus.pending).length;
 
   AdminProvider() {
     _init();
@@ -34,11 +37,16 @@ class AdminProvider with ChangeNotifier {
 
   void _init() {
     _refreshData();
-    
-    // In local mode, we refresh whenever the services indicate a change
-    // For simplicity, we just pull the latest from Hive
+
+    // Listen to real-time streams from Firebase to update the Admin UI instantly
     _productService.streamProducts().listen((_) => _refreshData());
     _catService.streamCats().listen((_) => _refreshData());
+    
+    // Dengarkan orderan baru dari pelanggan secara realtime
+    _orderService.streamAllOrders().listen((orders) {
+      _allOrders = orders;
+      notifyListeners();
+    });
   }
 
   void _refreshData() {
@@ -62,15 +70,17 @@ class AdminProvider with ChangeNotifier {
     try {
       String imageUrl = product.imageUrl;
       if (imageFile != null) {
-        // In local mode, we'd copy the file to app docs. 
-        // For now, we'll use the local path as the URL.
-        imageUrl = imageFile.path; 
+        final uploadedUrl = await _storageService.uploadImage(imageFile, 'products');
+        if (uploadedUrl != null) {
+          imageUrl = uploadedUrl;
+        }
       }
 
       if (product.id.isEmpty) {
         await _productService.addProduct(product.copyWith(imageUrl: imageUrl));
       } else {
-        await _productService.updateProduct(product.copyWith(imageUrl: imageUrl));
+        await _productService
+            .updateProduct(product.copyWith(imageUrl: imageUrl));
       }
     } finally {
       _isLoading = false;
@@ -91,7 +101,10 @@ class AdminProvider with ChangeNotifier {
     try {
       String imageUrl = cat.imageUrl;
       if (imageFile != null) {
-        imageUrl = imageFile.path;
+        final uploadedUrl = await _storageService.uploadImage(imageFile, 'cats');
+        if (uploadedUrl != null) {
+          imageUrl = uploadedUrl;
+        }
       }
 
       if (cat.id.isEmpty) {
