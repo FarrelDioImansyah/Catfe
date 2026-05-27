@@ -32,16 +32,23 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void addToCart(ProductModel product) {
-    int index = _items.indexWhere((item) => item.product.id == product.id);
+  void addToCart(ProductModel product, {String? iceLevel, String? sugarLevel, String? size}) {
+    int index = _items.indexWhere((item) =>
+        item.product.id == product.id &&
+        item.iceLevel == iceLevel &&
+        item.sugarLevel == sugarLevel &&
+        item.size == size);
 
     if (index >= 0) {
       _items[index].quantity++;
     } else {
       _items.add(
         CartItemModel(
-          id: DateTime.now().toString(),
+          id: '${DateTime.now().millisecondsSinceEpoch}_${product.id}',
           product: product,
+          iceLevel: iceLevel,
+          sugarLevel: sugarLevel,
+          size: size,
         ),
       );
     }
@@ -49,14 +56,14 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void removeItem(String productId) {
-    _items.removeWhere((item) => item.product.id == productId);
+  void removeItem(String cartItemId) {
+    _items.removeWhere((item) => item.id == cartItemId);
     _persist();
     notifyListeners();
   }
 
-  void incrementQuantity(String productId) {
-    int index = _items.indexWhere((item) => item.product.id == productId);
+  void incrementQuantity(String cartItemId) {
+    int index = _items.indexWhere((item) => item.id == cartItemId);
     if (index >= 0) {
       _items[index].quantity++;
       _persist();
@@ -64,8 +71,8 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  void decrementQuantity(String productId) {
-    int index = _items.indexWhere((item) => item.product.id == productId);
+  void decrementQuantity(String cartItemId) {
+    int index = _items.indexWhere((item) => item.id == cartItemId);
     if (index >= 0) {
       if (_items[index].quantity > 1) {
         _items[index].quantity--;

@@ -66,6 +66,51 @@ class CartScreen extends StatelessWidget {
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                     ),
                                     Text('\$${item.product.price.toStringAsFixed(2)}', style: const TextStyle(color: Colors.grey)),
+                                    if (item.iceLevel != null || item.sugarLevel != null || item.size != null) ...[
+                                      const SizedBox(height: 4),
+                                      Wrap(
+                                        spacing: 4,
+                                        runSpacing: 4,
+                                        children: [
+                                          if (item.size != null)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.pastelPeach,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                item.size!,
+                                                style: const TextStyle(fontSize: 10, color: AppColors.deepBrown, fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                          if (item.iceLevel != null)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.cream,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                item.iceLevel!,
+                                                style: const TextStyle(fontSize: 10, color: AppColors.deepBrown, fontWeight: FontWeight.w600),
+                                              ),
+                                            ),
+                                          if (item.sugarLevel != null)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.cream,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                item.sugarLevel!,
+                                                style: const TextStyle(fontSize: 10, color: AppColors.deepBrown, fontWeight: FontWeight.w600),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -73,12 +118,12 @@ class CartScreen extends StatelessWidget {
                                 children: [
                                   IconButton(
                                     icon: const Icon(Icons.remove_circle_outline, color: AppColors.deepBrown),
-                                    onPressed: () => cart.decrementQuantity(item.product.id),
+                                    onPressed: () => cart.decrementQuantity(item.id),
                                   ),
                                   Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold)),
                                   IconButton(
                                     icon: const Icon(Icons.add_circle_outline, color: AppColors.deepBrown),
-                                    onPressed: () => cart.incrementQuantity(item.product.id),
+                                    onPressed: () => cart.incrementQuantity(item.id),
                                   ),
                                 ],
                               ),

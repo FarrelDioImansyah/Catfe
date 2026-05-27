@@ -9,6 +9,8 @@ class ProductModel {
   final bool isPromo;
   final double? discountPrice;
 
+  bool get isDrink => category.toLowerCase() == 'coffee' || category.toLowerCase() == 'tea';
+
   ProductModel({
     required this.id,
     required this.name,
