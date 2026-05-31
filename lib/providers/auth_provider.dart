@@ -20,11 +20,11 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> register(String email, String password, String name) async {
+  Future<void> register(String email, String password, String name, String username) async {
     _isLoading = true;
     notifyListeners();
     try {
-      _userModel = await _authService.register(email, password, name);
+      _userModel = await _authService.register(email, password, name, username);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -42,9 +42,45 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> signInWithGoogle() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final user = await _authService.signInWithGoogle();
+      if (user != null) {
+        _userModel = user;
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateProfile({String? profileImageUrl, String? birthDate}) async {
+    if (_userModel == null) return;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _authService.updateUserProfile(
+        uid: _userModel!.uid,
+        profileImageUrl: profileImageUrl,
+        birthDate: birthDate,
+      );
+      _userModel = _userModel!.copyWith(
+        profileImageUrl: profileImageUrl ?? _userModel!.profileImageUrl,
+        birthDate: birthDate ?? _userModel!.birthDate,
+      );
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> logout() async {
     await _authService.logout();
     _userModel = null;
     notifyListeners();
   }
 }
+
+

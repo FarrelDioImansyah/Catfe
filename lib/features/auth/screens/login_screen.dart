@@ -51,6 +51,25 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _loginWithGoogle() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    try {
+      await authProvider.signInWithGoogle();
+      if (mounted && authProvider.isAuthenticated) {
+        Navigator.pushReplacementNamed(context, '/');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 32),
                   CustomTextField(
                     controller: _emailController,
-                    label: 'Email',
+                    label: 'Email / Gmail',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) => v!.isEmpty ? 'Enter email' : null,
@@ -111,6 +130,31 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
+                  const Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text("Or continue with"),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, _) {
+                      return OutlinedButton.icon(
+                        onPressed: auth.isLoading ? null : _loginWithGoogle,
+                        icon: const Icon(Icons.g_mobiledata, size: 30, color: Colors.red),
+                        label: const Text('Sign in with Google'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: const BorderSide(color: AppColors.deepBrown),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -133,3 +177,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+

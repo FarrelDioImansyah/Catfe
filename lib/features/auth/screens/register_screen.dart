@@ -14,12 +14,14 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   @override
   void dispose() {
     _nameController.dispose();
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -34,6 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
           _nameController.text.trim(),
+          _usernameController.text.trim(),
         );
 
         if (mounted && authProvider.isAuthenticated) {
@@ -49,6 +52,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           );
         }
+      }
+    }
+  }
+
+  void _loginWithGoogle() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    try {
+      await authProvider.signInWithGoogle();
+      if (mounted && authProvider.isAuthenticated) {
+        Navigator.pushReplacementNamed(context, '/');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     }
   }
@@ -75,7 +97,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const Icon(Icons.pets, size: 80, color: AppColors.deepBrown),
                   const SizedBox(height: 16),
                   Text(
-                    'Join the Café',
+                     'Join the Café',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
@@ -91,8 +113,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
+                    controller: _usernameController,
+                    label: 'Username',
+                    icon: Icons.alternate_email,
+                    validator: (v) => v!.isEmpty ? 'Enter username' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
                     controller: _emailController,
-                    label: 'Email',
+                    label: 'Email / Gmail',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) => v!.isEmpty ? 'Enter email' : null,
@@ -120,6 +149,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
+                  const Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text("Or continue with"),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, _) {
+                      return OutlinedButton.icon(
+                        onPressed: auth.isLoading ? null : _loginWithGoogle,
+                        icon: const Icon(Icons.g_mobiledata, size: 30, color: Colors.red),
+                        label: const Text('Sign in with Google'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: const BorderSide(color: AppColors.deepBrown),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -142,3 +196,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
+

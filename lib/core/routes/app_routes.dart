@@ -6,6 +6,7 @@ import '../../features/menu/screens/menu_screen.dart';
 import '../../features/menu/screens/product_detail_screen.dart';
 import '../../features/cart/screens/cart_screen.dart';
 import '../../features/cart/screens/checkout_screen.dart';
+import '../../features/profile/screens/profile_screen.dart';
 import '../../models/product_model.dart';
 
 class AppRoutes {
@@ -16,6 +17,7 @@ class AppRoutes {
   static const String productDetail = '/product-detail';
   static const String cart = '/cart';
   static const String checkout = '/checkout';
+  static const String profile = '/profile';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -36,6 +38,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const CartScreen());
       case checkout:
         return MaterialPageRoute(builder: (_) => const CheckoutScreen());
+      case profile:
+        return MaterialPageRoute(builder: (_) => const ProfileScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
